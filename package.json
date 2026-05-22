@@ -5,7 +5,10 @@
   "type": "module",
   "main": "electron/main.cjs",
   "license": "MIT",
-  "author": "molcurrent",
+  "author": {
+    "name": "molcurrent",
+    "email": "molcurrent@users.noreply.github.com"
+  },
   "homepage": "https://github.com/molcurrent/claw-currentthink-desktop#readme",
   "repository": {
     "type": "git",
@@ -85,6 +88,7 @@
         "AppImage",
         "deb"
       ],
+      "maintainer": "molcurrent <molcurrent@users.noreply.github.com>",
       "category": "Development"
     }
   }
