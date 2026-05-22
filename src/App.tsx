@@ -145,6 +145,15 @@ export interface WorkspaceItem {
   isPinned: boolean;
 }
 
+const workspaceStorageKey = "claw_workspaces";
+const workspaceStorageVersionKey = "claw_workspaces_version";
+const expandedWorkspacesStorageKey = "claw_expanded_workspaces";
+const currentWorkspaceStorageVersion = "2";
+
+function defaultWorkspaceItems(): WorkspaceItem[] {
+  return [];
+}
+
 function deriveWorkspaceNameFromPath(pathValue: string): string {
   const normalized = normalizeWorkspacePathValue(pathValue);
   return normalized.split("/").pop() || "未命名工作区";
@@ -203,6 +212,14 @@ function sanitizeExpandedWorkspaceState(state: Record<string, boolean>, items: W
     }
     return result;
   }, {});
+}
+
+function shouldResetSavedWorkspaces(value: string | null): boolean {
+  if (localStorage.getItem(workspaceStorageVersionKey) !== currentWorkspaceStorageVersion) return true;
+  if (!value) return false;
+  const legacyHomeMarker = ["", "Users", "mac", ""].join("/");
+  const legacyNames = ["New project", "Codex", "byroncad", "test"];
+  return value.includes(legacyHomeMarker) || legacyNames.some((name) => value.includes(`/Documents/${name}`));
 }
 
 function mergeTranscript(base: string, addition: string) {
@@ -545,6 +562,7 @@ const defaultPreferences: PublicPreferences = {
   permissionMode: "danger-full-access",
   workspacePath: "/workspace",
   theme: "light",
+  language: "zh-CN",
   fontSize: 13,
   autoSaveLogs: true,
   anthropicApiKeySet: false,
@@ -1087,9 +1105,9 @@ function resolveSlashCommandPrompt(input: string, catalogSkills: SkillCatalogIte
     error: `未识别的 /命令：/${commandName}。支持 ${visibleSlashCommands.join("、")} 以及 /<skill-name>。`,
   };
 }
-const nvidiaNimBaseUrl = "https://integrate.api.nvidia.com/v1";
+const nvidiaNimBaseUrl = "https://integrate.api.nvidia.com";
 const nvidiaNimExampleModel = "nvidia/llama-3.3-nemotron-super-49b-v1.5";
-const xiaomiMimoBaseUrl = "https://api.xiaomimimo.com/v1";
+const xiaomiMimoBaseUrl = "https://api.xiaomimimo.com";
 const providerPresetCards: ProviderPresetCard[] = [
   {
     providerId: "nvidia-nim",
@@ -1185,7 +1203,7 @@ const providerPresetCards: ProviderPresetCard[] = [
     accent: "from-[#111827] via-[#1f2937] to-[#f59e0b]",
     chip: "Kimi",
     category: "国内模型",
-    baseUrl: "https://api.moonshot.cn/v1",
+    baseUrl: "https://api.moonshot.cn",
     helper: "Kimi 官方接入地址，适合长上下文与中文写作场景。",
     models: [
       {
@@ -1221,7 +1239,7 @@ const providerPresetCards: ProviderPresetCard[] = [
     chip: "高性价比",
     category: "高性能推理",
     filterCategories: ["高性能推理", "国内模型"],
-    baseUrl: "https://api.deepseek.com/v1",
+    baseUrl: "https://api.deepseek.com",
     helper: "DeepSeek 官方接入地址，支持 Pro / Flash 双档位切换。",
     models: [
       {
@@ -1265,7 +1283,7 @@ const providerPresetCards: ProviderPresetCard[] = [
     accent: "from-[#111111] via-[#27272a] to-[#60a5fa]",
     chip: "路由聚合",
     category: "路由聚合",
-    baseUrl: "https://openrouter.ai/api/v1",
+    baseUrl: "https://openrouter.ai/api",
     helper: "适合统一接入多家模型供应商，也方便测试 OSS 模型。",
     models: [
       {
@@ -1283,7 +1301,7 @@ const providerPresetCards: ProviderPresetCard[] = [
     accent: "from-[#1f2937] via-[#374151] to-[#ef4444]",
     chip: "多模态",
     category: "国内模型",
-    baseUrl: "https://api.minimax.io/v1",
+    baseUrl: "https://api.minimax.io",
     helper: "MiniMax 官方接入地址，适合 M2.7 系列与多模态路线。",
     models: [
       {
@@ -1318,7 +1336,7 @@ const providerPresetCards: ProviderPresetCard[] = [
     accent: "from-[#172554] via-[#1e3a8a] to-[#22c55e]",
     chip: "Qwen",
     category: "国内模型",
-    baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    baseUrl: "https://dashscope.aliyuncs.com/compatible-mode",
     helper: "阿里云百炼兼容地址，适合 Qwen 系列官方接入。",
     models: [
       {
@@ -1380,7 +1398,7 @@ const providerPresetCards: ProviderPresetCard[] = [
       baseUrl: nvidiaNimBaseUrl,
       helper: "NVIDIA integrate Base URL 固定为统一入口，但当前官方模型列表里还没有 Xiaomi MiMo 家族。",
       models: [],
-      unavailableReason: "截至 NVIDIA LLM API 文档最近一次更新，`integrate.api.nvidia.com/v1` 尚未列出 Xiaomi MiMo 兼容模型。",
+      unavailableReason: "截至 NVIDIA LLM API 文档最近一次更新，`integrate.api.nvidia.com` 尚未列出 Xiaomi MiMo 兼容模型。",
     },
   },
 ];
@@ -4899,6 +4917,7 @@ function SettingsModal({
     permissionMode: preferences.permissionMode,
     workspacePath: preferences.workspacePath,
     theme: preferences.theme,
+    language: preferences.language,
     fontSize: preferences.fontSize,
     autoSaveLogs: preferences.autoSaveLogs,
     enableDeepSeek1M: preferences.enableDeepSeek1M,
@@ -4924,6 +4943,7 @@ function SettingsModal({
       permissionMode: preferences.permissionMode,
       workspacePath: preferences.workspacePath,
       theme: preferences.theme,
+      language: preferences.language,
       fontSize: preferences.fontSize,
       autoSaveLogs: preferences.autoSaveLogs,
       enableDeepSeek1M: preferences.enableDeepSeek1M,
@@ -4942,7 +4962,7 @@ function SettingsModal({
 
   useEffect(() => {
     if (!open) return;
-    setActiveTab("数据");
+    setActiveTab("通用");
     setPresetCategory("全部");
     const activeProvider =
       providerPresetCards.find((provider) => provider.baseUrl === preferences.openaiBaseUrl)?.providerId || "nvidia-nim";
@@ -5181,6 +5201,33 @@ function SettingsModal({
                   </section>
 
                   <section>
+                    <h3 className="theme-text-primary mb-4 text-[13px] font-semibold">语言</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { id: "zh-CN", label: "简体中文", description: "默认中文界面与中文提示" },
+                        { id: "en-US", label: "English", description: "Use English metadata and locale" },
+                      ].map((languageOption) => (
+                        <button
+                          key={languageOption.id}
+                          type="button"
+                          onClick={() => setDraft({ ...draft, language: languageOption.id as "zh-CN" | "en-US" })}
+                          className={cx(
+                            "rounded-2xl border p-4 text-left transition-colors",
+                            draft.language === languageOption.id
+                              ? "border-neutral-900 bg-neutral-900 text-white"
+                              : "theme-button-surface border",
+                          )}
+                        >
+                          <div className="text-[13px] font-semibold">{languageOption.label}</div>
+                          <div className={cx("mt-1 text-[11px] leading-5", draft.language === languageOption.id ? "text-white/75" : "theme-text-muted")}>
+                            {languageOption.description}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section>
                     <h3 className="theme-text-primary mb-4 text-[13px] font-semibold">会话交互</h3>
                     <label className="flex items-center justify-between py-1 cursor-pointer">
                       <div className="pr-4">
@@ -5254,7 +5301,7 @@ function SettingsModal({
                       <input
                         value={draft.openaiBaseUrl}
                         onChange={(event) => setDraft({ ...draft, openaiBaseUrl: event.target.value })}
-                        placeholder="例如 https://api.deepseek.com/v1"
+                        placeholder="例如 https://api.deepseek.com"
                         className="h-9 w-full rounded-lg border border-black/10 bg-white px-3 text-[13px] outline-none focus:border-black/20"
                       />
                     </label>
@@ -5892,22 +5939,25 @@ export default function App() {
 
   const [workspaces, setWorkspaces] = useState<WorkspaceItem[]>(() => {
     try {
-      const saved = localStorage.getItem("claw_workspaces");
+      const saved = localStorage.getItem(workspaceStorageKey);
+      if (shouldResetSavedWorkspaces(saved)) {
+        localStorage.removeItem(workspaceStorageKey);
+        localStorage.removeItem(expandedWorkspacesStorageKey);
+        localStorage.setItem(workspaceStorageVersionKey, currentWorkspaceStorageVersion);
+        return defaultWorkspaceItems();
+      }
       if (saved) return sanitizeWorkspaceItems(JSON.parse(saved));
     } catch {}
-    return sanitizeWorkspaceItems([
-      { id: "ws-1", name: "Example App", path: "/workspace/example-app", isPinned: false },
-      { id: "ws-2", name: "Claw Code", path: "/workspace/claw-code", isPinned: false },
-      { id: "ws-3", name: "Desktop Shell", path: "/workspace/claw-currentthink-desktop", isPinned: false },
-    ]);
+    localStorage.setItem(workspaceStorageVersionKey, currentWorkspaceStorageVersion);
+    return defaultWorkspaceItems();
   });
 
   const [expandedWorkspaces, setExpandedWorkspaces] = useState<Record<string, boolean>>(() => {
     try {
-      const saved = localStorage.getItem("claw_expanded_workspaces");
+      const saved = localStorage.getItem(expandedWorkspacesStorageKey);
       if (saved) return sanitizeExpandedWorkspaceState(JSON.parse(saved), workspaces);
     } catch {}
-    return { "ws-2": true };
+    return {};
   });
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -5916,7 +5966,8 @@ export default function App() {
   useEffect(() => {
     const sanitized = sanitizeWorkspaceItems(workspaces);
     workspacesRef.current = sanitized;
-    localStorage.setItem("claw_workspaces", JSON.stringify(sanitized));
+    localStorage.setItem(workspaceStorageKey, JSON.stringify(sanitized));
+    localStorage.setItem(workspaceStorageVersionKey, currentWorkspaceStorageVersion);
     const changed =
       sanitized.length !== workspaces.length ||
       sanitized.some((item, index) => {
@@ -5930,7 +5981,7 @@ export default function App() {
 
   useEffect(() => {
     const sanitized = sanitizeExpandedWorkspaceState(expandedWorkspaces, workspaces);
-    localStorage.setItem("claw_expanded_workspaces", JSON.stringify(sanitized));
+    localStorage.setItem(expandedWorkspacesStorageKey, JSON.stringify(sanitized));
     if (Object.keys(sanitized).length !== Object.keys(expandedWorkspaces).length) {
       setExpandedWorkspaces(sanitized);
     }
@@ -5947,6 +5998,10 @@ export default function App() {
     document.documentElement.dataset.theme = preferences.theme || "light";
     document.body.dataset.theme = preferences.theme || "light";
   }, [preferences.theme]);
+
+  useEffect(() => {
+    document.documentElement.lang = preferences.language || "zh-CN";
+  }, [preferences.language]);
 
   const activeWorkspacePath = normalizeWorkspacePathValue(preferences.workspacePath);
 

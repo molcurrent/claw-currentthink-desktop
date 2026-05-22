@@ -1,7 +1,7 @@
 {
   "name": "claw-currentthink-desktop",
   "version": "0.1.0",
-  "description": "Currentthink-style desktop shell for the Claw Code CLI.",
+  "description": "内置 Claw Code 的中文桌面编程助手，开箱即用支持本地任务、续聊和 OpenAI-compatible 模型。",
   "type": "module",
   "main": "electron/main.cjs",
   "license": "MIT",
@@ -54,7 +54,7 @@
   },
   "build": {
     "appId": "com.currentthink.clawdesktop",
-    "productName": "Claw Currentthink",
+    "productName": "Claw Currentthink 中文版",
     "directories": {
       "output": "release"
     },
@@ -82,7 +82,7 @@
       "category": "public.app-category.developer-tools",
       "icon": "assets/icon.icns",
       "extendInfo": {
-        "NSMicrophoneUsageDescription": "Claw Currentthink 使用麦克风将语音转写为输入内容。"
+        "NSMicrophoneUsageDescription": "Claw Currentthink 中文版使用麦克风将语音转写为输入内容。"
       },
       "target": [
         "dmg",

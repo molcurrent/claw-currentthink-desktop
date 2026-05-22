@@ -28,6 +28,7 @@ export interface PublicPreferences {
   permissionMode: ClawPermissionMode;
   workspacePath: string;
   theme: "light" | "dark";
+  language: "zh-CN" | "en-US";
   fontSize: number;
   autoSaveLogs: boolean;
   anthropicApiKeySet: boolean;

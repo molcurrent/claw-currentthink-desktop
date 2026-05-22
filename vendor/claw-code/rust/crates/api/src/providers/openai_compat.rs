@@ -1559,8 +1559,32 @@ fn chat_completions_endpoint(base_url: &str) -> String {
     if trimmed.ends_with("/chat/completions") {
         trimmed.to_string()
     } else {
-        format!("{trimmed}/chat/completions")
+        let base = chat_completions_base_url(trimmed);
+        format!("{base}/chat/completions")
     }
+}
+
+fn chat_completions_base_url(trimmed_base_url: &str) -> Cow<'_, str> {
+    let lowered = trimmed_base_url.to_ascii_lowercase();
+    if lowered.ends_with("/v1") || lowered.ends_with("/v4") {
+        return Cow::Borrowed(trimmed_base_url);
+    }
+    if lowered.ends_with("/compatible-mode") || lowered == "https://openrouter.ai/api" {
+        return Cow::Owned(format!("{trimmed_base_url}/v1"));
+    }
+    let root_v1_hosts = [
+        "https://api.deepseek.com",
+        "https://api.minimax.io",
+        "https://api.moonshot.cn",
+        "https://api.openai.com",
+        "https://api.x.ai",
+        "https://api.xiaomimimo.com",
+        "https://integrate.api.nvidia.com",
+    ];
+    if root_v1_hosts.contains(&lowered.as_str()) {
+        return Cow::Owned(format!("{trimmed_base_url}/v1"));
+    }
+    Cow::Borrowed(trimmed_base_url)
 }
 
 fn request_id_from_headers(headers: &reqwest::header::HeaderMap) -> Option<String> {
@@ -2031,12 +2055,28 @@ mod tests {
             "https://api.x.ai/v1/chat/completions"
         );
         assert_eq!(
+            chat_completions_endpoint("https://api.x.ai"),
+            "https://api.x.ai/v1/chat/completions"
+        );
+        assert_eq!(
             chat_completions_endpoint("https://api.x.ai/v1/"),
             "https://api.x.ai/v1/chat/completions"
         );
         assert_eq!(
             chat_completions_endpoint("https://api.x.ai/v1/chat/completions"),
             "https://api.x.ai/v1/chat/completions"
+        );
+        assert_eq!(
+            chat_completions_endpoint("https://openrouter.ai/api"),
+            "https://openrouter.ai/api/v1/chat/completions"
+        );
+        assert_eq!(
+            chat_completions_endpoint("https://dashscope.aliyuncs.com/compatible-mode"),
+            "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+        );
+        assert_eq!(
+            chat_completions_endpoint("https://open.bigmodel.cn/api/paas/v4"),
+            "https://open.bigmodel.cn/api/paas/v4/chat/completions"
         );
     }
 

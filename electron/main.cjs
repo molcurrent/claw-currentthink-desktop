@@ -106,6 +106,7 @@ const defaultData = {
     permissionMode: "danger-full-access",
     workspacePath: defaultWorkspace,
     theme: "light",
+    language: "zh-CN",
     fontSize: 13,
     autoSaveLogs: true,
     enableDeepSeek1M: false,
@@ -275,6 +276,10 @@ function normalizeClawPath(value, fallback = "claw") {
   if (candidate === "claw") return "claw";
   if (path.isAbsolute(candidate) && isExecutableFile(candidate)) return candidate;
   return fallback || "claw";
+}
+
+function normalizeLanguage(value, fallback = "zh-CN") {
+  return value === "en-US" ? "en-US" : value === "zh-CN" ? "zh-CN" : fallback;
 }
 
 function normalizeModelProfiles(value, fallback = []) {
@@ -2345,6 +2350,7 @@ function publicPreferences() {
     openaiApiKeyHint: getSecretHint(openaiApiKey),
     offlineSpeechEnabled: preferences.offlineSpeechEnabled !== false,
     offlineSpeechModel: normalizeOfflineSpeechModel(preferences.offlineSpeechModel, "mlx-community/whisper-tiny"),
+    language: normalizeLanguage(preferences.language, "zh-CN"),
     secrets: undefined,
   };
 }
@@ -2668,6 +2674,7 @@ ipcMain.handle("preferences:save", async (_event, incoming) => {
     permissionMode: hasOwn(incoming, "permissionMode") ? normalizePermissionMode(incoming.permissionMode, previous.permissionMode) : previous.permissionMode,
     workspacePath: hasOwn(incoming, "workspacePath") ? normalizeWorkspacePath(incoming.workspacePath, previous.workspacePath) : previous.workspacePath,
     theme: incoming.theme === "dark" ? "dark" : incoming.theme === "light" ? "light" : previous.theme,
+    language: hasOwn(incoming, "language") ? normalizeLanguage(incoming.language, previous.language) : normalizeLanguage(previous.language),
     fontSize: hasOwn(incoming, "fontSize") ? normalizeFontSize(incoming.fontSize, previous.fontSize) : previous.fontSize,
     autoSaveLogs: hasOwn(incoming, "autoSaveLogs") ? Boolean(incoming.autoSaveLogs) : previous.autoSaveLogs,
     enableDeepSeek1M: hasOwn(incoming, "enableDeepSeek1M") ? Boolean(incoming.enableDeepSeek1M) : previous.enableDeepSeek1M,
