@@ -1,0 +1,21 @@
+#!/usr/bin/expect -f
+
+set timeout -1
+
+if {[llength $argv] < 4} {
+  puts stderr "usage: claw-repl.expect <clawPath> <cwd> <model> <permissionMode>"
+  exit 64
+}
+
+set clawPath [lindex $argv 0]
+set cwd [lindex $argv 1]
+set model [lindex $argv 2]
+set permissionMode [lindex $argv 3]
+
+cd $cwd
+if {$permissionMode == "danger-full-access"} {
+  spawn -noecho $clawPath --model $model --permission-mode $permissionMode --dangerously-skip-permissions
+} else {
+  spawn -noecho $clawPath --model $model --permission-mode $permissionMode
+}
+interact

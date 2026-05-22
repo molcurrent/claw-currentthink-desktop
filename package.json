@@ -1,0 +1,91 @@
+{
+  "name": "claw-currentthink-desktop",
+  "version": "0.1.0",
+  "description": "Currentthink-style desktop shell for the Claw Code CLI.",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "license": "MIT",
+  "author": "molcurrent",
+  "homepage": "https://github.com/molcurrent/claw-currentthink-desktop#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/molcurrent/claw-currentthink-desktop.git"
+  },
+  "bugs": {
+    "url": "https://github.com/molcurrent/claw-currentthink-desktop/issues"
+  },
+  "scripts": {
+    "dev": "concurrently -k \"vite --host 127.0.0.1\" \"wait-on tcp:5173 && node scripts/run-electron.cjs .\"",
+    "dev:renderer": "vite --host 127.0.0.1",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "start": "node scripts/run-electron.cjs .",
+    "dist": "npm run build && electron-builder --publish never",
+    "dist:mac": "npm run build && electron-builder --mac --universal --publish never",
+    "dist:linux": "npm run build && electron-builder --linux --publish never",
+    "dist:win": "npm run build && electron-builder --win --publish never"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.12",
+    "@vitejs/plugin-react": "^5.1.2",
+    "gpt-tokenizer": "^3.4.0",
+    "lowdb": "^7.0.1",
+    "lucide-react": "^0.487.0",
+    "motion": "^12.23.24",
+    "open-cli": "^9.0.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tailwindcss": "^4.1.12",
+    "vite": "^6.3.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "concurrently": "^9.1.2",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.9.3",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "com.currentthink.clawdesktop",
+    "productName": "Claw Currentthink",
+    "directories": {
+      "output": "release"
+    },
+    "artifactName": "Claw-Currentthink-${version}-${os}-${arch}.${ext}",
+    "asarUnpack": [
+      "electron/claw-repl.expect"
+    ],
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "skills/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "assets/icon.icns",
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "Claw Currentthink 使用麦克风将语音转写为输入内容。"
+      },
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Development"
+    }
+  }
+}
