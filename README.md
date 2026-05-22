@@ -1,6 +1,6 @@
 # Claw Currentthink Desktop
 
-Claw Currentthink Desktop is a Currentthink-style Electron shell for running and continuing local `claw` CLI conversations. It keeps local task history, conversation state, OpenAI-compatible routing preferences, token counts, and REPL-backed task output in a desktop UI.
+Claw Currentthink Desktop is a Currentthink-style Electron shell for running and continuing `claw` CLI conversations. It ships with a bundled Claw Code runtime, keeps local task history, conversation state, OpenAI-compatible routing preferences, token counts, and REPL-backed task output in a desktop UI.
 
 ## Install
 
@@ -24,7 +24,8 @@ Download the installer for your platform from:
 ## Requirements
 
 - Node.js 20+ for development
-- A working `claw` executable on `PATH`, or a configured path in the desktop preferences
+- No separate Claw Code install is required for release builds; the app uses its bundled `claw` binary by default
+- Optional: a custom `claw` executable path in desktop preferences when you want to override the bundled runtime
 - macOS persistent REPL mode uses `/usr/bin/expect`
 
 ## Development
@@ -45,6 +46,8 @@ Create local packages for the current platform:
 ```bash
 npm run dist
 ```
+
+The package commands compile the vendored Rust `claw` binary before Electron packaging.
 
 Platform-specific package commands are also available:
 

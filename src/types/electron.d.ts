@@ -82,6 +82,8 @@ export interface ClawTask {
 export interface SystemStatus {
   clawFound: boolean;
   clawPath: string;
+  bundledClawPath?: string;
+  usingBundledClaw?: boolean;
   version: string;
   error: string;
   platform: string;

@@ -538,12 +538,12 @@ const quickActions = [
 ];
 
 const defaultPreferences: PublicPreferences = {
-  clawPath: "claw",
+  clawPath: "bundled",
   defaultModel: "claude-opus-4-6",
   openaiBaseUrl: "",
   openaiCompatEnabled: false,
   permissionMode: "danger-full-access",
-  workspacePath: "/Users/mac/Documents/New project",
+  workspacePath: "/workspace",
   theme: "light",
   fontSize: 13,
   autoSaveLogs: true,
@@ -5113,12 +5113,15 @@ function SettingsModal({
                         <input
                           value={draft.clawPath}
                           onChange={(event) => setDraft({ ...draft, clawPath: event.target.value })}
+                          placeholder="bundled"
                           className="theme-field h-9 w-full rounded-lg px-3 text-[13px] outline-none focus:border-black/20"
                         />
                       </label>
                       <div className="theme-note theme-border-soft rounded-xl border p-3">
                         <div className="mb-1 flex items-center justify-between">
-                          <span className="theme-text-secondary text-[12px] font-medium">状态</span>
+                          <span className="theme-text-secondary text-[12px] font-medium">
+                            状态{systemStatus?.usingBundledClaw ? "（内置）" : ""}
+                          </span>
                           <span className={cx("text-[12px]", systemStatus?.clawFound ? "text-emerald-700" : "text-red-700")}>
                             {systemStatus?.clawFound ? "可用" : "不可用"}
                           </span>
@@ -5893,11 +5896,9 @@ export default function App() {
       if (saved) return sanitizeWorkspaceItems(JSON.parse(saved));
     } catch {}
     return sanitizeWorkspaceItems([
-      { id: "ws-1", name: "Codex", path: "/Users/mac/Documents/Codex", isPinned: false },
-      { id: "ws-2", name: "New Think", path: "/Users/mac/Documents/New project", isPinned: false },
-      { id: "ws-3", name: "New project 2", path: "/Users/mac/Documents/New project 2", isPinned: false },
-      { id: "ws-4", name: "byroncad", path: "/Users/mac/Documents/byroncad", isPinned: false },
-      { id: "ws-5", name: "test", path: "/Users/mac/Documents/test", isPinned: false },
+      { id: "ws-1", name: "Example App", path: "/workspace/example-app", isPinned: false },
+      { id: "ws-2", name: "Claw Code", path: "/workspace/claw-code", isPinned: false },
+      { id: "ws-3", name: "Desktop Shell", path: "/workspace/claw-currentthink-desktop", isPinned: false },
     ]);
   });
 

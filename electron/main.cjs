@@ -6,7 +6,7 @@ const crypto = require("node:crypto");
 const { spawn, spawnSync } = require("node:child_process");
 
 const isDev = !app.isPackaged;
-const defaultWorkspace = path.join(os.homedir(), "Documents", "New project");
+const defaultWorkspace = app.getPath("documents");
 const cargoBin = path.join(os.homedir(), ".cargo", "bin");
 const validPermissionModes = new Set(["read-only", "workspace-write", "danger-full-access"]);
 const maxPromptChars = 60_000;
@@ -97,7 +97,7 @@ const expectReplScriptPath = isDev
 const defaultData = {
   version: 2,
   preferences: {
-    clawPath: "claw",
+    clawPath: "bundled",
     defaultModel: "claude-opus-4-6",
     openaiBaseUrl: "",
     openaiCompatEnabled: false,
@@ -124,8 +124,47 @@ const defaultData = {
 };
 
 function runtimePathEnv() {
-  const entries = [cargoBin, process.env.PATH || ""].filter(Boolean);
+  const bundled = resolveBundledClawPath();
+  const entries = [
+    bundled ? path.dirname(bundled) : "",
+    cargoBin,
+    process.env.PATH || "",
+  ].filter(Boolean);
   return entries.join(path.delimiter);
+}
+
+function bundledClawRoot() {
+  return isDev ? path.join(__dirname, "..", "bin") : path.join(process.resourcesPath, "bin");
+}
+
+function executableNameForPlatform(platform = process.platform) {
+  return platform === "win32" ? "claw.exe" : "claw";
+}
+
+function bundledClawCandidates() {
+  const root = bundledClawRoot();
+  const exe = executableNameForPlatform();
+  const arch = process.arch === "arm64" ? "arm64" : process.arch === "x64" ? "x64" : process.arch;
+  const platform = process.platform;
+  const fallbackArch = arch === "arm64" ? "x64" : "arm64";
+  return [
+    path.join(root, platform, exe),
+    path.join(root, `${platform}-${arch}`, exe),
+    path.join(root, `${platform}-${fallbackArch}`, exe),
+    path.join(root, exe),
+  ];
+}
+
+function resolveBundledClawPath() {
+  return bundledClawCandidates().find((candidate) => isExecutableFile(candidate)) || "";
+}
+
+function resolveClawPath(preferences = {}) {
+  const configured = normalizeString(preferences.clawPath, "", { max: 4096 });
+  if (configured && configured !== "claw" && configured !== "bundled") {
+    return configured;
+  }
+  return resolveBundledClawPath() || configured || "claw";
 }
 
 function createTaskEvent(taskId, stream, chunk) {
@@ -232,6 +271,7 @@ function isExecutableFile(filePath) {
 
 function normalizeClawPath(value, fallback = "claw") {
   const candidate = normalizeString(value, fallback, { max: 4096 });
+  if (!candidate || candidate === "bundled") return "bundled";
   if (candidate === "claw") return "claw";
   if (path.isAbsolute(candidate) && isExecutableFile(candidate)) return candidate;
   return fallback || "claw";
@@ -1417,7 +1457,7 @@ function buildExecutionContext(task, preferences) {
     cwd: normalizeWorkspacePath(task.cwd, preferences.workspacePath),
     model,
     permissionMode: task.permissionMode || preferences.permissionMode,
-    clawPath: preferences.clawPath || "claw",
+    clawPath: resolveClawPath(preferences),
     openaiBaseUrl: preferences.openaiBaseUrl || "",
     openaiCompatEnabled: preferences.openaiCompatEnabled === true,
     openaiApiKey,
@@ -2294,6 +2334,7 @@ function publicPreferences() {
 
   return {
     ...preferences,
+    clawPath: preferences.clawPath || "bundled",
     openaiCompatEnabled: preferences.openaiCompatEnabled === true,
     defaultModel: normalizeUiModelForStorage(preferences.defaultModel, preferences.defaultModel),
     anthropicApiKeySet: Boolean(anthropicApiKey),
@@ -2583,14 +2624,18 @@ ipcMain.handle("window:toggle-fullscreen", async () => {
 
 ipcMain.handle("system:status", async () => {
   const preferences = db.data.preferences;
-  const result = spawnSync(preferences.clawPath || "claw", ["--version"], {
+  const resolvedClawPath = resolveClawPath(preferences);
+  const bundledClawPath = resolveBundledClawPath();
+  const result = spawnSync(resolvedClawPath, ["--version"], {
     env: { ...process.env, PATH: runtimePathEnv() },
     encoding: "utf8",
     timeout: 5000,
   });
   return {
     clawFound: result.status === 0,
-    clawPath: preferences.clawPath || "claw",
+    clawPath: resolvedClawPath,
+    bundledClawPath,
+    usingBundledClaw: Boolean(bundledClawPath && resolvedClawPath === bundledClawPath),
     version: result.stdout.trim() || result.stderr.trim(),
     error: result.status === 0 ? "" : result.stderr.trim() || result.error?.message || "claw unavailable",
     platform: `${process.platform} ${process.arch}`,

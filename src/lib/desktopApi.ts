@@ -79,14 +79,14 @@ const bundledSkillCatalog = [
 ];
 
 const fallbackPreferences: PublicPreferences = {
-  clawPath: "claw",
+  clawPath: "bundled",
   defaultModel: "claude-opus-4-6",
   openaiBaseUrl: "",
   openaiCompatEnabled: false,
   offlineSpeechEnabled: true,
   offlineSpeechModel: "mlx-community/whisper-tiny",
   permissionMode: "danger-full-access",
-  workspacePath: "/Users/mac/Documents/New project",
+  workspacePath: "/workspace",
   theme: "light",
   fontSize: 13,
   autoSaveLogs: true,
@@ -166,7 +166,7 @@ let fallbackTasks: ClawTask[] = [
     id: "sample-1",
     conversationId: "browser-preview-conversation",
     prompt: "检查当前仓库并总结可改进点",
-    cwd: "/Users/mac/Documents/New project/claw-code",
+    cwd: "/workspace/claw-code",
     model: "claude-opus-4-6",
     permissionMode: "danger-full-access",
     files: [],
@@ -221,7 +221,9 @@ export function getDesktopApi() {
     system: {
       status: async (): Promise<SystemStatus> => ({
         clawFound: true,
-        clawPath: "claw",
+        clawPath: "bundled",
+        bundledClawPath: "bundled",
+        usingBundledClaw: true,
         version: "Claw Code\n  Version          0.1.0\n  Target           browser-preview",
         error: "",
         platform: "browser preview",
@@ -289,7 +291,7 @@ export function getDesktopApi() {
               {
                 id: crypto.randomUUID(),
                 name: "diagram-preview.png",
-                path: "/Users/mac/Documents/New project/claw-code/assets/diagram-preview.png",
+                path: "/workspace/claw-code/assets/diagram-preview.png",
                 size: 248_120,
                 modifiedAt: new Date().toISOString(),
               },
@@ -298,12 +300,12 @@ export function getDesktopApi() {
               {
                 id: crypto.randomUUID(),
                 name: "README.md",
-                path: "/Users/mac/Documents/New project/claw-code/README.md",
+                path: "/workspace/claw-code/README.md",
                 size: 12048,
                 modifiedAt: new Date().toISOString(),
               },
             ],
-      selectFolder: async () => "/Users/mac/Documents/New project/claw-code",
+      selectFolder: async () => "/workspace/claw-code",
       fromDroppedFiles: async (files: File[] | FileList): Promise<AttachedFile[]> =>
         Array.from(files).map((file) => ({
           id: crypto.randomUUID(),
@@ -318,7 +320,7 @@ export function getDesktopApi() {
         if (!payload.query.trim()) return [];
         return [
           {
-            path: "/Users/mac/Documents/New project/claw-currentthink-desktop/src/App.tsx",
+            path: "/workspace/claw-currentthink-desktop/src/App.tsx",
             name: "App.tsx",
             line: 1,
             preview: `浏览器预览搜索结果: ${payload.query}`,

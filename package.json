@@ -20,13 +20,14 @@
   "scripts": {
     "dev": "concurrently -k \"vite --host 127.0.0.1\" \"wait-on tcp:5173 && node scripts/run-electron.cjs .\"",
     "dev:renderer": "vite --host 127.0.0.1",
+    "build:claw": "node scripts/build-bundled-claw.cjs",
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "start": "node scripts/run-electron.cjs .",
-    "dist": "npm run build && electron-builder --publish never",
-    "dist:mac": "npm run build && electron-builder --mac --universal --publish never",
-    "dist:linux": "npm run build && electron-builder --linux --publish never",
-    "dist:win": "npm run build && electron-builder --win --publish never"
+    "dist": "npm run build:claw && npm run build && electron-builder --publish never",
+    "dist:mac": "npm run build:claw && npm run build && electron-builder --mac --universal --publish never",
+    "dist:linux": "npm run build:claw && npm run build && electron-builder --linux --publish never",
+    "dist:win": "npm run build:claw && npm run build && electron-builder --win --publish never"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.12",
@@ -57,6 +58,16 @@
     "directories": {
       "output": "release"
     },
+    "afterPack": "scripts/after-pack.cjs",
+    "extraResources": [
+      {
+        "from": "bin",
+        "to": "bin",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
     "artifactName": "Claw-Currentthink-${version}-${os}-${arch}.${ext}",
     "asarUnpack": [
       "electron/claw-repl.expect"
@@ -79,11 +90,13 @@
       ]
     },
     "win": {
+      "icon": "assets/icon.ico",
       "target": [
         "nsis"
       ]
     },
     "linux": {
+      "icon": "assets/icon.png",
       "target": [
         "AppImage",
         "deb"
